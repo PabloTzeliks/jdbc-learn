@@ -8,6 +8,7 @@ public class Vehicle {
     private String licensePlate;
     private String model;
     private LocalDate manufacturingDate;
+    private Double mileage;
     private VehicleStatus status;
 
     public Vehicle(int id, String licensePlate, String model, LocalDate manufacturingDate, VehicleStatus status) {

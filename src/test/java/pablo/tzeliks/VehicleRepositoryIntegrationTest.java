@@ -14,7 +14,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("Teste de Integração - Vehicle (JDBC Puro)")
-public class VehicleIntegrationTest {
+public class VehicleRepositoryIntegrationTest {
 
     VehicleRepository repository;
 
