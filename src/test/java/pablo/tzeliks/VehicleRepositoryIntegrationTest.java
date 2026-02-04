@@ -5,6 +5,7 @@ import pablo.tzeliks.domain.Vehicle;
 import pablo.tzeliks.domain.VehicleStatus;
 import pablo.tzeliks.infra.VehicleRepository;
 import pablo.tzeliks.infra.VehicleRepositoryImpl;
+import pablo.tzeliks.service.VehicleService;
 import pablo.tzeliks.utils.DatabaseConnection;
 
 import java.sql.*;
@@ -17,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class VehicleRepositoryIntegrationTest {
 
     VehicleRepository repository;
+    VehicleService service;
 
     // --- Scripts DDL (Data Definition Language) ---
     // Note que ajustei os nomes das colunas para snake_case (padrão de banco)
@@ -58,6 +60,7 @@ public class VehicleRepositoryIntegrationTest {
     @BeforeEach
     void setup() {
         repository = new VehicleRepositoryImpl();
+        service = new VehicleService(repository);
 
         // Limpa a tabela antes de cada teste para garantir isolamento
         try (Connection conn = DatabaseConnection.getConnection();
@@ -78,7 +81,7 @@ public class VehicleRepositoryIntegrationTest {
         Vehicle novoVeiculo = new Vehicle(0, "ABC-1234", "Volvo FH", LocalDate.of(2022, 5, 20), VehicleStatus.AVAILABLE);
 
         // Ação (Descomente quando criar o DAO)
-        Vehicle salvo = repository.save(novoVeiculo);
+        Vehicle salvo = service.save(novoVeiculo);
 
         // Validação (Simulando que 'salvo' retornou com ID)
         assertNotNull(salvo.getId());
@@ -109,10 +112,10 @@ public class VehicleRepositoryIntegrationTest {
 
         // Ação e Validação
         RuntimeException ex = assertThrows(RuntimeException.class, () -> {
-            repository.save(veiculoDuplicado);
+            service.save(veiculoDuplicado);
         });
 
-        // assertEquals("Veículo já cadastrado com esta placa!", ex.getMessage());
+        assertEquals("Veículo já cadastrado com esta placa!", ex.getMessage());
     }
 
     @Test
@@ -122,7 +125,7 @@ public class VehicleRepositoryIntegrationTest {
         int idGerado = inserirVeiculoSQL("BUS-1010", "Mercedes Benz", LocalDate.of(2020, 1, 1), VehicleStatus.AVAILABLE);
 
         // Ação
-        Vehicle encontrado = repository.findById(idGerado);
+        Vehicle encontrado = service.findById(idGerado);
 
         // Validação
         assertNotNull(encontrado);
@@ -135,7 +138,7 @@ public class VehicleRepositoryIntegrationTest {
     void deveFalharBuscaIdInexistente() {
         // Ação e Validação
         assertThrows(RuntimeException.class, () -> {
-            repository.findById(9999);
+            service.findById(9999);
         });
     }
 

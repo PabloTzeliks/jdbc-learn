@@ -9,11 +9,15 @@ public interface VehicleRepository {
 
     Vehicle save(Vehicle vehicle) throws SQLException;
 
-    Vehicle findById(int id);
+    Vehicle findById(int id) throws SQLException;
 
-    List<Vehicle> findAll();
+    List<Vehicle> findAll() throws SQLException;
 
-    Vehicle update(Vehicle newVehicle);
+    Vehicle update(Vehicle newVehicle) throws SQLException;
 
-    Vehicle delete(int id);
+    Vehicle delete(int id) throws SQLException;
+
+    // Additional
+
+    boolean isValidPlate(String licensePlate) throws SQLException;
 }

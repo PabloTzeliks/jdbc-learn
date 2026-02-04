@@ -1,9 +1,11 @@
 package pablo.tzeliks.infra;
 
 import pablo.tzeliks.domain.Vehicle;
+import pablo.tzeliks.domain.VehicleStatus;
 import pablo.tzeliks.utils.DatabaseConnection;
 
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.List;
 
 public class VehicleRepositoryImpl implements VehicleRepository {
@@ -40,7 +42,61 @@ public class VehicleRepositoryImpl implements VehicleRepository {
     }
 
     @Override
-    public Vehicle findById(int id) {
+    public boolean isValidPlate(String licensePlate) throws SQLException {
+
+        String query = """
+                SELECT COUNT(*) 
+                FROM vehicle 
+                WHERE license_plate = ?;
+                """;
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+
+            ps.setString(1, licensePlate);
+
+            try (var rs = ps.executeQuery()) {
+
+                if (rs.next()) {
+
+                    int count = rs.getInt(1);
+                    return count == 0;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    @Override
+    public Vehicle findById(int id)  throws SQLException {
+
+        String query = """
+                SELECT * 
+                FROM vehicle 
+                WHERE id = ?;
+                """;
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+
+            ps.setInt(1, id);
+
+            try (var rs = ps.executeQuery()) {
+
+                if (rs.next()) {
+
+                    return new Vehicle(
+                            id,
+                            rs.getString(2),
+                            rs.getString(3),
+                            rs.getDate(4).toLocalDate(),
+                            VehicleStatus.valueOf(rs.getString(5))
+                    );
+                }
+            }
+        }
+
         return null;
     }
 
