@@ -15,7 +15,7 @@ public interface VehicleRepository {
 
     Vehicle update(Vehicle newVehicle) throws SQLException;
 
-    Vehicle delete(int id) throws SQLException;
+    void delete(int id) throws SQLException;
 
     // Additional
 

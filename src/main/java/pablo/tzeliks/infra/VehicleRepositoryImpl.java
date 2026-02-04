@@ -6,6 +6,7 @@ import pablo.tzeliks.utils.DatabaseConnection;
 
 import java.sql.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 public class VehicleRepositoryImpl implements VehicleRepository {
@@ -101,17 +102,80 @@ public class VehicleRepositoryImpl implements VehicleRepository {
     }
 
     @Override
-    public List<Vehicle> findAll() {
-        return List.of();
+    public List<Vehicle> findAll() throws SQLException {
+
+        List<Vehicle> vehicles = new ArrayList<>();
+
+        String query = """
+                SELECT * 
+                FROM vehicle;
+                """;
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+
+            try (var rs = ps.executeQuery()) {
+
+                while (rs.next()) {
+
+                    vehicles.add(
+                            new Vehicle(
+                                rs.getInt(1),
+                                rs.getString(2),
+                                rs.getString(3),
+                                rs.getDate(4).toLocalDate(),
+                                VehicleStatus.valueOf(rs.getString(5))
+                    ));
+                }
+            }
+        }
+
+        return vehicles;
     }
 
     @Override
-    public Vehicle update(Vehicle newVehicle) {
+    public Vehicle update(Vehicle newVehicle) throws SQLException {
+
+        String query = """
+                UPDATE vehicle
+                SET license_plate = ?, model = ?, manufacturing_date = ?, status = ?
+                WHERE id = ?;
+                """;
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+
+            ps.setString(1, newVehicle.getLicensePlate());
+            ps.setString(2, newVehicle.getModel());
+            ps.setDate(3, Date.valueOf(newVehicle.getManufacturingDate()));
+            ps.setString(4, String.valueOf(newVehicle.getStatus()));
+
+            ps.setInt(5, newVehicle.getId());
+
+            int num = ps.executeUpdate();
+
+            if (num > 0) {
+
+                return newVehicle;
+            }
+        }
+
         return null;
     }
 
     @Override
-    public Vehicle delete(int id) {
-        return null;
+    public void delete(int id) throws SQLException {
+        String query = """
+                DELETE FROM vehicle
+                WHERE id = ?;
+                """;
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+
+            ps.setInt(1, id);
+
+            int num = ps.executeUpdate();
+        }
     }
 }

@@ -166,7 +166,7 @@ public class VehicleRepositoryIntegrationTest {
         Vehicle paraAtualizar = new Vehicle(id, "UPT-2020", "Modelo Novo", LocalDate.now(), VehicleStatus.IN_MAINTANENCE);
 
         // Ação
-        repository.update(paraAtualizar);
+        service.update(paraAtualizar);
 
         // Validação via SQL
         try (Connection conn = DatabaseConnection.getConnection();
@@ -185,7 +185,7 @@ public class VehicleRepositoryIntegrationTest {
         int id = inserirVeiculoSQL("DEL-0000", "Para Deletar", LocalDate.now(), VehicleStatus.AVAILABLE);
 
         // Ação
-        repository.delete(id);
+        service.delete(id);
 
         // Validação
         try (Connection conn = DatabaseConnection.getConnection();
