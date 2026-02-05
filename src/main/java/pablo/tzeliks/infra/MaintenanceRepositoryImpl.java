@@ -1,8 +1,10 @@
 package pablo.tzeliks.infra;
 
 import pablo.tzeliks.domain.Maintenance;
+import pablo.tzeliks.domain.Vehicle;
 import pablo.tzeliks.utils.DatabaseConnection;
 
+import java.math.BigDecimal;
 import java.sql.*;
 
 public class MaintenanceRepositoryImpl implements MaintenanceRepository {
@@ -37,5 +39,34 @@ public class MaintenanceRepositoryImpl implements MaintenanceRepository {
         }
 
         return maintenance;
+    }
+
+    @Override
+    public BigDecimal calculateTotalCostsFromOneVehicle(int idVehicle) {
+
+        String query = """
+                SELECT COALESCE(SUM(cost), 0) as total
+                FROM maintenance
+                WHERE vehicle_id = ?;
+                """;
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+
+            ps.setInt(1, idVehicle);
+
+            try (var rs = ps.executeQuery()) {
+                if (rs.next()) {
+
+                    return rs.getBigDecimal("total");
+                }
+
+                return null;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+
+            throw new RuntimeException("An error Ocurred: " + e.getMessage());
+        }
     }
 }

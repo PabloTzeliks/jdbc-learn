@@ -6,6 +6,8 @@ import pablo.tzeliks.domain.VehicleStatus;
 import pablo.tzeliks.infra.MaintenanceRepository;
 import pablo.tzeliks.infra.VehicleRepository;
 
+import java.math.BigDecimal;
+
 public class MaintenanceService {
 
     private MaintenanceRepository maintenanceRepository;
@@ -27,5 +29,10 @@ public class MaintenanceService {
         vehicleRepository.updateStatus(idVehicle, VehicleStatus.IN_MAINTANENCE);
 
         return dbMaintenance;
+    }
+
+    public BigDecimal calculateTotalMaintenanceCost(int idVehicle) {
+
+        return maintenanceRepository.calculateTotalCostsFromOneVehicle(idVehicle);
     }
 }

@@ -271,20 +271,20 @@ public class VehicleRepositoryIntegrationTest {
         assertEquals("Motor", veiculoCompleto.getMaintenances().get(0).getDescription());
     }
 
-//    @Test
-//    @DisplayName("Relatório: Deve calcular custo total de manutenção de um veículo")
-//    void deveCalcularCustoTotal() throws SQLException {
-//        int idVeiculo = inserirVeiculoSQL("CASH-100", "Iveco", LocalDate.now(), VehicleStatus.AVAILABLE);
-//
-//        inserirManutencaoSQL(idVeiculo, "Peça A", 100.50);
-//        inserirManutencaoSQL(idVeiculo, "Peça B", 200.50);
-//        inserirManutencaoSQL(idVeiculo, "Mão de Obra", 100.00);
-//
-//        // Total esperado: 401.00
-//        BigDecimal total = service.calculateTotalMaintenanceCost(idVeiculo);
-//
-//        assertEquals(new BigDecimal("401.00"), total);
-//    }
+    @Test
+    @DisplayName("Relatório: Deve calcular custo total de manutenção de um veículo")
+    void deveCalcularCustoTotal() throws SQLException {
+        int idVeiculo = inserirVeiculoSQL("CASH-100", "Iveco", LocalDate.now(), VehicleStatus.AVAILABLE);
+
+        inserirManutencaoSQL(idVeiculo, "Peça A", 100.50);
+        inserirManutencaoSQL(idVeiculo, "Peça B", 200.50);
+        inserirManutencaoSQL(idVeiculo, "Mão de Obra", 100.00);
+
+        // Total esperado: 401.00
+        BigDecimal total = maintenanceService.calculateTotalMaintenanceCost(idVeiculo);
+
+        assertEquals(new BigDecimal("401.00"), total);
+    }
 
     // --- Helpers SQL ---
 
