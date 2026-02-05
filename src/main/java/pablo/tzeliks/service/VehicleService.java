@@ -57,6 +57,13 @@ public class VehicleService {
         repository.delete(id);
     }
 
+    public Vehicle findWithMaintenances(int idVeiculo) {
+
+        return null;
+    }
+
+    // Additional Methods
+
     private boolean validatePlate(String licensePlate) {
 
         return repository.isValidPlate(licensePlate);

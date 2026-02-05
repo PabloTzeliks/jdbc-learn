@@ -1,8 +1,12 @@
 package pablo.tzeliks.domain;
 
+import pablo.tzeliks.Main;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Vehicle {
 
@@ -11,6 +15,8 @@ public class Vehicle {
     private String model;
     private LocalDate manufacturingDate;
     private VehicleStatus status;
+
+    private List<Maintenance> maintenances = new ArrayList<>();
 
     public Vehicle(int id, String licensePlate, String model, LocalDate manufacturingDate, VehicleStatus status) {
         this.id = id;
@@ -60,6 +66,14 @@ public class Vehicle {
         this.status = status;
     }
 
+    public List<Maintenance> getMaintenances() {
+        return maintenances;
+    }
+
+    public void setMaintenances(List<Maintenance> maintenances) {
+        this.maintenances = maintenances;
+    }
+
     // Additional
     public static Vehicle mapRow(ResultSet rs) throws SQLException {
         return new Vehicle(
@@ -79,6 +93,7 @@ public class Vehicle {
                 ", model='" + model + '\'' +
                 ", manufacturingDate=" + manufacturingDate +
                 ", status=" + status +
+                ", maintenances=" + maintenances +
                 '}';
     }
 }

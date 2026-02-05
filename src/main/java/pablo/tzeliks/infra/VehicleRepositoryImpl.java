@@ -1,5 +1,6 @@
 package pablo.tzeliks.infra;
 
+import pablo.tzeliks.domain.Maintenance;
 import pablo.tzeliks.domain.Vehicle;
 import pablo.tzeliks.domain.VehicleStatus;
 import pablo.tzeliks.utils.DatabaseConnection;
@@ -204,6 +205,49 @@ public class VehicleRepositoryImpl implements VehicleRepository {
 
             return correct > 0;
 
+        } catch (SQLException e) {
+            throw new RuntimeException("An error Ocurred: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Vehicle findAllMaintenances(int idVehicle) {
+
+        String query = """
+                SELECT v.*,
+                m.id as m_id, m.vehicle_id, m.description, m.cost, m.date
+                FROM vehicle m
+                LEFT JOIN maintenance m ON v.id = m.vehicle_id
+                WHERE v.id = ?;
+                """;
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+
+            ps.setInt(1, idVehicle);
+
+            try (var rs = ps.executeQuery()) {
+                Vehicle dbVehicle = null;
+
+                while (rs.next()) {
+
+                    if (dbVehicle == null) {
+
+                        dbVehicle = Vehicle.mapRow(rs);
+                    }
+
+                    int idMaintenance = rs.getInt("m_id");
+
+                    if (idMaintenance > 0) {
+
+                        Maintenance dbMaintenance = Maintenance.mapRow(rs);
+
+                        dbVehicle.getMaintenances().add(dbMaintenance);
+                    }
+                }
+
+                return dbVehicle;
+            }
         } catch (SQLException e) {
             throw new RuntimeException("An error Ocurred: " + e.getMessage());
         }
