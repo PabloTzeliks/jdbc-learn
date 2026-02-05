@@ -216,7 +216,7 @@ public class VehicleRepositoryImpl implements VehicleRepository {
         String query = """
                 SELECT v.*,
                 m.id as m_id, m.vehicle_id, m.description, m.cost, m.date
-                FROM vehicle m
+                FROM vehicle v
                 LEFT JOIN maintenance m ON v.id = m.vehicle_id
                 WHERE v.id = ?;
                 """;
@@ -249,6 +249,8 @@ public class VehicleRepositoryImpl implements VehicleRepository {
                 return dbVehicle;
             }
         } catch (SQLException e) {
+            e.printStackTrace();
+
             throw new RuntimeException("An error Ocurred: " + e.getMessage());
         }
     }

@@ -7,10 +7,10 @@ import java.util.List;
 
 public class VehicleService {
 
-    private final VehicleRepository repository;
+    private final VehicleRepository vehicleRepository;
 
-    public VehicleService(VehicleRepository repository) {
-        this.repository = repository;
+    public VehicleService(VehicleRepository vehicleRepository) {
+        this.vehicleRepository = vehicleRepository;
     }
 
     public Vehicle save(Vehicle vehicle) {
@@ -20,12 +20,12 @@ public class VehicleService {
             throw new RuntimeException("Veículo já cadastrado com esta placa!");
         }
 
-        return repository.save(vehicle);
+        return vehicleRepository.save(vehicle);
     }
 
     public Vehicle findById(int id) {
 
-        var dbVehicle = repository.findById(id);
+        var dbVehicle = vehicleRepository.findById(id);
 
         if (dbVehicle == null) {
 
@@ -37,7 +37,7 @@ public class VehicleService {
 
     public Vehicle update(Vehicle newVehicle) {
 
-        var dbNewVehicle = repository.update(newVehicle);
+        var dbNewVehicle = vehicleRepository.update(newVehicle);
 
         if (dbNewVehicle == null) {
 
@@ -49,23 +49,23 @@ public class VehicleService {
 
     public List<Vehicle> findAll() {
 
-        return repository.findAll();
+        return vehicleRepository.findAll();
     }
 
     public void delete(int id) {
 
-        repository.delete(id);
+        vehicleRepository.delete(id);
     }
 
     public Vehicle findWithMaintenances(int idVeiculo) {
 
-        return null;
+        return vehicleRepository.findAllMaintenances(idVeiculo);
     }
 
     // Additional Methods
 
     private boolean validatePlate(String licensePlate) {
 
-        return repository.isValidPlate(licensePlate);
+        return vehicleRepository.isValidPlate(licensePlate);
     }
 }
