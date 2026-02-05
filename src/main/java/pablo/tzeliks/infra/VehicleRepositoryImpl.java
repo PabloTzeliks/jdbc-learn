@@ -5,7 +5,6 @@ import pablo.tzeliks.domain.VehicleStatus;
 import pablo.tzeliks.utils.DatabaseConnection;
 
 import java.sql.*;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 

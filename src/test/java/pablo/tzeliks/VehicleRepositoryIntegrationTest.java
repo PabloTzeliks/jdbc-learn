@@ -8,6 +8,7 @@ import pablo.tzeliks.infra.VehicleRepositoryImpl;
 import pablo.tzeliks.service.VehicleService;
 import pablo.tzeliks.utils.DatabaseConnection;
 
+import java.math.BigDecimal;
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.List;
@@ -21,8 +22,7 @@ public class VehicleRepositoryIntegrationTest {
     VehicleService service;
 
     // --- Scripts DDL (Data Definition Language) ---
-    // Note que ajustei os nomes das colunas para snake_case (padrão de banco)
-    private static final String CREATE_VEHICLE_TABLE = """
+    private static final String CREATE_VEHICLE = """
             CREATE TABLE IF NOT EXISTS vehicle (
                 id INT PRIMARY KEY AUTO_INCREMENT,
                 license_plate VARCHAR(20) UNIQUE NOT NULL,
@@ -32,47 +32,51 @@ public class VehicleRepositoryIntegrationTest {
             );
             """;
 
+    private static final String CREATE_MAINTENANCE = """
+            CREATE TABLE IF NOT EXISTS maintenance (
+                id INT PRIMARY KEY AUTO_INCREMENT,
+                vehicle_id INT NOT NULL,
+                description VARCHAR(255) NOT NULL,
+                cost DECIMAL(10, 2) NOT NULL,
+                date DATE NOT NULL,
+                FOREIGN KEY (vehicle_id) REFERENCES vehicle(id) ON DELETE CASCADE
+            );
+            """;
+
     @BeforeAll
     static void setupGlobal() {
         try (Connection conn = DatabaseConnection.getConnection();
              Statement stmt = conn.createStatement()) {
 
-            stmt.execute("DROP TABLE IF EXISTS vehicle");
-            stmt.execute(CREATE_VEHICLE_TABLE);
-
-        } catch (SQLException e) {
-            fail("Falha ao configurar banco de dados inicial: " + e.getMessage());
-        }
-    }
-
-    @AfterAll
-    static void tearDownGlobal() {
-        try (Connection conn = DatabaseConnection.getConnection();
-             Statement stmt = conn.createStatement()) {
-
+            // Ordem importa: Dropa primeiro a filha (maintenance), depois a mãe (vehicle)
+            stmt.execute("DROP TABLE IF EXISTS maintenance");
             stmt.execute("DROP TABLE IF EXISTS vehicle");
 
+            stmt.execute(CREATE_VEHICLE);
+            stmt.execute(CREATE_MAINTENANCE);
+
         } catch (SQLException e) {
-            e.printStackTrace();
+            fail("Erro no setup global: " + e.getMessage());
         }
     }
 
     @BeforeEach
     void setup() {
-        repository = new VehicleRepositoryImpl();
-        service = new VehicleService(repository);
+        // Injeção de Dependência manual
+        service = new VehicleService(new VehicleRepositoryImpl());
 
-        // Limpa a tabela antes de cada teste para garantir isolamento
         try (Connection conn = DatabaseConnection.getConnection();
              Statement stmt = conn.createStatement()) {
-
+            stmt.execute("SET FOREIGN_KEY_CHECKS = 0");
+            stmt.execute("TRUNCATE TABLE maintenance");
             stmt.execute("TRUNCATE TABLE vehicle");
-
+            stmt.execute("SET FOREIGN_KEY_CHECKS = 1");
         } catch (SQLException e) {
-            fail("Erro ao limpar tabela: " + e.getMessage());
+            fail(e.getMessage());
         }
     }
 
+    // Testes Simples
     @Test
     @DisplayName("Deve salvar um veículo com sucesso e validar no banco")
     void deveSalvarVeiculo() throws SQLException {
@@ -196,24 +200,112 @@ public class VehicleRepositoryIntegrationTest {
         }
     }
 
-    // --- MÉTODOS AUXILIARES (Para não depender do DAO nos testes) ---
+    // Testes Complexos
+    @Test
+    @DisplayName("Regra de Negócio: Adicionar manutenção deve mudar status do veículo")
+    void deveRegistrarManutencaoEAtualizarStatus() throws SQLException {
+        // 1. Cenário: Tenho um carro DISPONÍVEL
+        int idVeiculo = inserirVeiculoSQL("MAN-1234", "Ford Cargo", LocalDate.now(), VehicleStatus.AVAILABLE);
+
+        Maintenance manutencao = new Maintenance();
+        manutencao.setDescription("Troca de Óleo e Filtros");
+        manutencao.setCost(new BigDecimal("1500.50"));
+        manutencao.setDate(LocalDate.now());
+
+        // 2. Ação: Chamo o serviço passando o ID do carro e o objeto manutenção
+        service.addMaintenance(idVeiculo, manutencao);
+
+        // 3. Validação A: A manutenção foi salva?
+        try (Connection conn = DatabaseConnection.getConnection();
+             ResultSet rs = conn.createStatement().executeQuery("SELECT * FROM maintenance WHERE vehicle_id = " + idVeiculo)) {
+            assertTrue(rs.next(), "Deveria ter registro na tabela maintenance");
+            assertEquals("Troca de Óleo e Filtros", rs.getString("description"));
+        }
+
+        // 4. Validação B (Regra de Negócio): O status do carro mudou automaticamente?
+        Vehicle veiculoAtualizado = service.findById(idVeiculo);
+        assertEquals(VehicleStatus.IN_MAINTANENCE, veiculoAtualizado.getStatus(),
+                "O sistema deveria ter mudado o status do carro para IN_MAINTANENCE automaticamente");
+    }
+
+    @Test
+    @DisplayName("Bad Path: Não pode adicionar manutenção em veículo inexistente")
+    void deveFalharManutencaoEmVeiculoInexistente() {
+        Maintenance m = new Maintenance();
+        m.setDescription("Reparo Fantasma");
+        m.setCost(BigDecimal.TEN);
+        m.setDate(LocalDate.now());
+
+        // Ação: Tentar adicionar no ID 9999
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> {
+            service.addMaintenance(9999, m);
+        });
+
+        // Validação da mensagem de erro amigável
+        assertEquals("Veículo não encontrado para adicionar manutenção!", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("Complex Query: Deve buscar Veículo trazendo sua lista de manutenções (JOIN)")
+    void deveBuscarVeiculoComHistoricoCompleto() throws SQLException {
+        // 1. Cenário: Carro com 2 manutenções
+        int idVeiculo = inserirVeiculoSQL("HIS-8888", "Scania V8", LocalDate.of(2020, 1, 1), VehicleStatus.IN_MAINTANENCE);
+        inserirManutencaoSQL(idVeiculo, "Motor", 5000.00);
+        inserirManutencaoSQL(idVeiculo, "Pneus", 2000.00);
+
+        // 2. Ação: Método especial que faz o JOIN
+        Vehicle veiculoCompleto = service.findWithMaintenances(idVeiculo);
+
+        // 3. Validações
+        assertNotNull(veiculoCompleto);
+        assertEquals("Scania V8", veiculoCompleto.getModel());
+
+        // A lista dentro do objeto Vehicle deve estar preenchida!
+        assertEquals(2, veiculoCompleto.getMaintenances().size());
+        assertEquals("Motor", veiculoCompleto.getMaintenances().get(0).getDescription());
+    }
+
+    @Test
+    @DisplayName("Relatório: Deve calcular custo total de manutenção de um veículo")
+    void deveCalcularCustoTotal() throws SQLException {
+        int idVeiculo = inserirVeiculoSQL("CASH-100", "Iveco", LocalDate.now(), VehicleStatus.AVAILABLE);
+
+        inserirManutencaoSQL(idVeiculo, "Peça A", 100.50);
+        inserirManutencaoSQL(idVeiculo, "Peça B", 200.50);
+        inserirManutencaoSQL(idVeiculo, "Mão de Obra", 100.00);
+
+        // Total esperado: 401.00
+        BigDecimal total = service.calculateTotalMaintenanceCost(idVeiculo);
+
+        assertEquals(new BigDecimal("401.00"), total);
+    }
+
+    // --- Helpers SQL ---
 
     private int inserirVeiculoSQL(String plate, String model, LocalDate date, VehicleStatus status) throws SQLException {
         String sql = "INSERT INTO vehicle (license_plate, model, manufacturing_date, status) VALUES (?, ?, ?, ?)";
-
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-
             stmt.setString(1, plate);
             stmt.setString(2, model);
-            stmt.setDate(3, java.sql.Date.valueOf(date)); // Conversão LocalDate -> SQL Date
-            stmt.setString(4, status.name());             // Conversão Enum -> String
-
+            stmt.setDate(3, java.sql.Date.valueOf(date));
+            stmt.setString(4, status.name());
             stmt.executeUpdate();
-
             ResultSet rs = stmt.getGeneratedKeys();
             rs.next();
             return rs.getInt(1);
+        }
+    }
+
+    private void inserirManutencaoSQL(int vehicleId, String desc, double cost) throws SQLException {
+        String sql = "INSERT INTO maintenance (vehicle_id, description, cost, date) VALUES (?, ?, ?, ?)";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, vehicleId);
+            stmt.setString(2, desc);
+            stmt.setBigDecimal(3, BigDecimal.valueOf(cost));
+            stmt.setDate(4, java.sql.Date.valueOf(LocalDate.now()));
+            stmt.executeUpdate();
         }
     }
 }
