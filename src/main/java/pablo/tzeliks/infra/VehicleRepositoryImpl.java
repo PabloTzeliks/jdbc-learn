@@ -11,7 +11,7 @@ import java.util.List;
 public class VehicleRepositoryImpl implements VehicleRepository {
 
     @Override
-    public Vehicle save(Vehicle vehicle) throws SQLException {
+    public Vehicle save(Vehicle vehicle) {
 
         String query = """
         INSERT INTO vehicle
@@ -36,13 +36,15 @@ public class VehicleRepositoryImpl implements VehicleRepository {
                     vehicle.setId(rs.getInt(1));
                 }
             }
+        } catch (SQLException e) {
+            throw new RuntimeException("An error Ocurred: " + e.getMessage());
         }
 
         return vehicle;
     }
 
     @Override
-    public boolean isValidPlate(String licensePlate) throws SQLException {
+    public boolean isValidPlate(String licensePlate) {
 
         String query = """
                 SELECT COUNT(*) 
@@ -63,13 +65,15 @@ public class VehicleRepositoryImpl implements VehicleRepository {
                     return count == 0;
                 }
             }
+        } catch (SQLException e) {
+            throw new RuntimeException("An error Ocurred: " + e.getMessage());
         }
 
         return false;
     }
 
     @Override
-    public Vehicle findById(int id)  throws SQLException {
+    public Vehicle findById(int id) {
 
         String query = """
                 SELECT * 
@@ -95,13 +99,15 @@ public class VehicleRepositoryImpl implements VehicleRepository {
                     );
                 }
             }
+        } catch (SQLException e) {
+            throw new RuntimeException("An error Ocurred: " + e.getMessage());
         }
 
         return null;
     }
 
     @Override
-    public List<Vehicle> findAll() throws SQLException {
+    public List<Vehicle> findAll() {
 
         List<Vehicle> vehicles = new ArrayList<>();
 
@@ -118,22 +124,19 @@ public class VehicleRepositoryImpl implements VehicleRepository {
                 while (rs.next()) {
 
                     vehicles.add(
-                            new Vehicle(
-                                rs.getInt(1),
-                                rs.getString(2),
-                                rs.getString(3),
-                                rs.getDate(4).toLocalDate(),
-                                VehicleStatus.valueOf(rs.getString(5))
-                    ));
+                            Vehicle.mapRow(rs)
+                    );
                 }
             }
+        } catch (SQLException e) {
+            throw new RuntimeException("An error Ocurred: " + e.getMessage());
         }
 
         return vehicles;
     }
 
     @Override
-    public Vehicle update(Vehicle newVehicle) throws SQLException {
+    public Vehicle update(Vehicle newVehicle) {
 
         String query = """
                 UPDATE vehicle
@@ -157,13 +160,15 @@ public class VehicleRepositoryImpl implements VehicleRepository {
 
                 return newVehicle;
             }
+        } catch (SQLException e) {
+            throw new RuntimeException("An error Ocurred: " + e.getMessage());
         }
 
         return null;
     }
 
     @Override
-    public void delete(int id) throws SQLException {
+    public void delete(int id) {
         String query = """
                 DELETE FROM vehicle
                 WHERE id = ?;
@@ -174,7 +179,9 @@ public class VehicleRepositoryImpl implements VehicleRepository {
 
             ps.setInt(1, id);
 
-            int num = ps.executeUpdate();
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("An error Ocurred: " + e.getMessage());
         }
     }
 }

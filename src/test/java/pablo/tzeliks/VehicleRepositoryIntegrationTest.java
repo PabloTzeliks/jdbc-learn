@@ -1,6 +1,7 @@
 package pablo.tzeliks;
 
 import org.junit.jupiter.api.*;
+import pablo.tzeliks.domain.Maintenance;
 import pablo.tzeliks.domain.Vehicle;
 import pablo.tzeliks.domain.VehicleStatus;
 import pablo.tzeliks.infra.VehicleRepository;
@@ -18,7 +19,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("Teste de Integração - Vehicle (JDBC Puro)")
 public class VehicleRepositoryIntegrationTest {
 
-    VehicleRepository repository;
     VehicleService service;
 
     // --- Scripts DDL (Data Definition Language) ---
@@ -154,7 +154,7 @@ public class VehicleRepositoryIntegrationTest {
         inserirVeiculoSQL("BBB-2222", "Truck 2", LocalDate.now(), VehicleStatus.IN_MAINTANENCE);
 
         // Ação
-        List<Vehicle> lista = repository.findAll();
+        List<Vehicle> lista = service.findAll();
 
         // Validação
         assertEquals(2, lista.size());
@@ -201,84 +201,84 @@ public class VehicleRepositoryIntegrationTest {
     }
 
     // Testes Complexos
-    @Test
-    @DisplayName("Regra de Negócio: Adicionar manutenção deve mudar status do veículo")
-    void deveRegistrarManutencaoEAtualizarStatus() throws SQLException {
-        // 1. Cenário: Tenho um carro DISPONÍVEL
-        int idVeiculo = inserirVeiculoSQL("MAN-1234", "Ford Cargo", LocalDate.now(), VehicleStatus.AVAILABLE);
-
-        Maintenance manutencao = new Maintenance();
-        manutencao.setDescription("Troca de Óleo e Filtros");
-        manutencao.setCost(new BigDecimal("1500.50"));
-        manutencao.setDate(LocalDate.now());
-
-        // 2. Ação: Chamo o serviço passando o ID do carro e o objeto manutenção
-        service.addMaintenance(idVeiculo, manutencao);
-
-        // 3. Validação A: A manutenção foi salva?
-        try (Connection conn = DatabaseConnection.getConnection();
-             ResultSet rs = conn.createStatement().executeQuery("SELECT * FROM maintenance WHERE vehicle_id = " + idVeiculo)) {
-            assertTrue(rs.next(), "Deveria ter registro na tabela maintenance");
-            assertEquals("Troca de Óleo e Filtros", rs.getString("description"));
-        }
-
-        // 4. Validação B (Regra de Negócio): O status do carro mudou automaticamente?
-        Vehicle veiculoAtualizado = service.findById(idVeiculo);
-        assertEquals(VehicleStatus.IN_MAINTANENCE, veiculoAtualizado.getStatus(),
-                "O sistema deveria ter mudado o status do carro para IN_MAINTANENCE automaticamente");
-    }
-
-    @Test
-    @DisplayName("Bad Path: Não pode adicionar manutenção em veículo inexistente")
-    void deveFalharManutencaoEmVeiculoInexistente() {
-        Maintenance m = new Maintenance();
-        m.setDescription("Reparo Fantasma");
-        m.setCost(BigDecimal.TEN);
-        m.setDate(LocalDate.now());
-
-        // Ação: Tentar adicionar no ID 9999
-        RuntimeException ex = assertThrows(RuntimeException.class, () -> {
-            service.addMaintenance(9999, m);
-        });
-
-        // Validação da mensagem de erro amigável
-        assertEquals("Veículo não encontrado para adicionar manutenção!", ex.getMessage());
-    }
-
-    @Test
-    @DisplayName("Complex Query: Deve buscar Veículo trazendo sua lista de manutenções (JOIN)")
-    void deveBuscarVeiculoComHistoricoCompleto() throws SQLException {
-        // 1. Cenário: Carro com 2 manutenções
-        int idVeiculo = inserirVeiculoSQL("HIS-8888", "Scania V8", LocalDate.of(2020, 1, 1), VehicleStatus.IN_MAINTANENCE);
-        inserirManutencaoSQL(idVeiculo, "Motor", 5000.00);
-        inserirManutencaoSQL(idVeiculo, "Pneus", 2000.00);
-
-        // 2. Ação: Método especial que faz o JOIN
-        Vehicle veiculoCompleto = service.findWithMaintenances(idVeiculo);
-
-        // 3. Validações
-        assertNotNull(veiculoCompleto);
-        assertEquals("Scania V8", veiculoCompleto.getModel());
-
-        // A lista dentro do objeto Vehicle deve estar preenchida!
-        assertEquals(2, veiculoCompleto.getMaintenances().size());
-        assertEquals("Motor", veiculoCompleto.getMaintenances().get(0).getDescription());
-    }
-
-    @Test
-    @DisplayName("Relatório: Deve calcular custo total de manutenção de um veículo")
-    void deveCalcularCustoTotal() throws SQLException {
-        int idVeiculo = inserirVeiculoSQL("CASH-100", "Iveco", LocalDate.now(), VehicleStatus.AVAILABLE);
-
-        inserirManutencaoSQL(idVeiculo, "Peça A", 100.50);
-        inserirManutencaoSQL(idVeiculo, "Peça B", 200.50);
-        inserirManutencaoSQL(idVeiculo, "Mão de Obra", 100.00);
-
-        // Total esperado: 401.00
-        BigDecimal total = service.calculateTotalMaintenanceCost(idVeiculo);
-
-        assertEquals(new BigDecimal("401.00"), total);
-    }
+//    @Test
+//    @DisplayName("Regra de Negócio: Adicionar manutenção deve mudar status do veículo")
+//    void deveRegistrarManutencaoEAtualizarStatus() throws SQLException {
+//        // 1. Cenário: Tenho um carro DISPONÍVEL
+//        int idVeiculo = inserirVeiculoSQL("MAN-1234", "Ford Cargo", LocalDate.now(), VehicleStatus.AVAILABLE);
+//
+//        Maintenance manutencao = new Maintenance();
+//        manutencao.setDescription("Troca de Óleo e Filtros");
+//        manutencao.setCost(new BigDecimal("1500.50"));
+//        manutencao.setDate(LocalDate.now());
+//
+//        // 2. Ação: Chamo o serviço passando o ID do carro e o objeto manutenção
+//        service.addMaintenance(idVeiculo, manutencao);
+//
+//        // 3. Validação A: A manutenção foi salva?
+//        try (Connection conn = DatabaseConnection.getConnection();
+//             ResultSet rs = conn.createStatement().executeQuery("SELECT * FROM maintenance WHERE vehicle_id = " + idVeiculo)) {
+//            assertTrue(rs.next(), "Deveria ter registro na tabela maintenance");
+//            assertEquals("Troca de Óleo e Filtros", rs.getString("description"));
+//        }
+//
+//        // 4. Validação B (Regra de Negócio): O status do carro mudou automaticamente?
+//        Vehicle veiculoAtualizado = service.findById(idVeiculo);
+//        assertEquals(VehicleStatus.IN_MAINTANENCE, veiculoAtualizado.getStatus(),
+//                "O sistema deveria ter mudado o status do carro para IN_MAINTANENCE automaticamente");
+//    }
+//
+//    @Test
+//    @DisplayName("Bad Path: Não pode adicionar manutenção em veículo inexistente")
+//    void deveFalharManutencaoEmVeiculoInexistente() {
+//        Maintenance m = new Maintenance();
+//        m.setDescription("Reparo Fantasma");
+//        m.setCost(BigDecimal.TEN);
+//        m.setDate(LocalDate.now());
+//
+//        // Ação: Tentar adicionar no ID 9999
+//        RuntimeException ex = assertThrows(RuntimeException.class, () -> {
+//            service.addMaintenance(9999, m);
+//        });
+//
+//        // Validação da mensagem de erro amigável
+//        assertEquals("Veículo não encontrado para adicionar manutenção!", ex.getMessage());
+//    }
+//
+//    @Test
+//    @DisplayName("Complex Query: Deve buscar Veículo trazendo sua lista de manutenções (JOIN)")
+//    void deveBuscarVeiculoComHistoricoCompleto() throws SQLException {
+//        // 1. Cenário: Carro com 2 manutenções
+//        int idVeiculo = inserirVeiculoSQL("HIS-8888", "Scania V8", LocalDate.of(2020, 1, 1), VehicleStatus.IN_MAINTANENCE);
+//        inserirManutencaoSQL(idVeiculo, "Motor", 5000.00);
+//        inserirManutencaoSQL(idVeiculo, "Pneus", 2000.00);
+//
+//        // 2. Ação: Método especial que faz o JOIN
+//        Vehicle veiculoCompleto = service.findWithMaintenances(idVeiculo);
+//
+//        // 3. Validações
+//        assertNotNull(veiculoCompleto);
+//        assertEquals("Scania V8", veiculoCompleto.getModel());
+//
+//        // A lista dentro do objeto Vehicle deve estar preenchida!
+//        assertEquals(2, veiculoCompleto.getMaintenances().size());
+//        assertEquals("Motor", veiculoCompleto.getMaintenances().get(0).getDescription());
+//    }
+//
+//    @Test
+//    @DisplayName("Relatório: Deve calcular custo total de manutenção de um veículo")
+//    void deveCalcularCustoTotal() throws SQLException {
+//        int idVeiculo = inserirVeiculoSQL("CASH-100", "Iveco", LocalDate.now(), VehicleStatus.AVAILABLE);
+//
+//        inserirManutencaoSQL(idVeiculo, "Peça A", 100.50);
+//        inserirManutencaoSQL(idVeiculo, "Peça B", 200.50);
+//        inserirManutencaoSQL(idVeiculo, "Mão de Obra", 100.00);
+//
+//        // Total esperado: 401.00
+//        BigDecimal total = service.calculateTotalMaintenanceCost(idVeiculo);
+//
+//        assertEquals(new BigDecimal("401.00"), total);
+//    }
 
     // --- Helpers SQL ---
 

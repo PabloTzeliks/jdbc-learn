@@ -3,7 +3,6 @@ package pablo.tzeliks.service;
 import pablo.tzeliks.domain.Vehicle;
 import pablo.tzeliks.infra.VehicleRepository;
 
-import java.sql.SQLException;
 import java.util.List;
 
 public class VehicleService {
@@ -16,33 +15,17 @@ public class VehicleService {
 
     public Vehicle save(Vehicle vehicle) {
 
-        Vehicle dbVehicle;
-
         if (!validatePlate(vehicle.getLicensePlate())) {
 
             throw new RuntimeException("Veículo já cadastrado com esta placa!");
         }
 
-        try {
-
-            dbVehicle = repository.save(vehicle);
-        } catch (SQLException ex) {
-
-            throw new RuntimeException(ex.getMessage());
-        }
-
-        return dbVehicle;
+        return repository.save(vehicle);
     }
 
     public Vehicle findById(int id) {
 
-        Vehicle dbVehicle;
-
-        try {
-            dbVehicle = repository.findById(id);
-        } catch (SQLException ex) {
-            throw new RuntimeException(ex.getMessage());
-        }
+        var dbVehicle = repository.findById(id);
 
         if (dbVehicle == null) {
 
@@ -54,13 +37,7 @@ public class VehicleService {
 
     public Vehicle update(Vehicle newVehicle) {
 
-        Vehicle dbNewVehicle;
-
-        try {
-            dbNewVehicle = repository.update(newVehicle);
-        } catch (SQLException ex) {
-            throw new RuntimeException(ex.getMessage());
-        }
+        var dbNewVehicle = repository.update(newVehicle);
 
         if (dbNewVehicle == null) {
 
@@ -72,30 +49,16 @@ public class VehicleService {
 
     public List<Vehicle> findAll() {
 
-        try {
-            return repository.findAll();
-        } catch (SQLException ex) {
-            throw new RuntimeException(ex.getMessage());
-        }
+        return repository.findAll();
     }
 
     public void delete(int id) {
 
-        try {
-            repository.delete(id);
-        } catch (SQLException ex) {
-            throw new RuntimeException(ex.getMessage());
-        }
+        repository.delete(id);
     }
 
     private boolean validatePlate(String licensePlate) {
 
-        try {
-
-            return repository.isValidPlate(licensePlate);
-        } catch (SQLException ex) {
-
-            throw new RuntimeException(ex.getMessage());
-        }
+        return repository.isValidPlate(licensePlate);
     }
 }

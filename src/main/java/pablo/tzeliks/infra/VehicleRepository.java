@@ -7,17 +7,17 @@ import java.util.List;
 
 public interface VehicleRepository {
 
-    Vehicle save(Vehicle vehicle) throws SQLException;
+    Vehicle save(Vehicle vehicle);
 
-    Vehicle findById(int id) throws SQLException;
+    Vehicle findById(int id);
 
-    List<Vehicle> findAll() throws SQLException;
+    List<Vehicle> findAll();
 
-    Vehicle update(Vehicle newVehicle) throws SQLException;
+    Vehicle update(Vehicle newVehicle);
 
-    void delete(int id) throws SQLException;
+    void delete(int id);
 
     // Additional
 
-    boolean isValidPlate(String licensePlate) throws SQLException;
+    boolean isValidPlate(String licensePlate);
 }
