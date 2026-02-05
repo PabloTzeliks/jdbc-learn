@@ -184,4 +184,28 @@ public class VehicleRepositoryImpl implements VehicleRepository {
             throw new RuntimeException("An error Ocurred: " + e.getMessage());
         }
     }
+
+    @Override
+    public boolean updateStatus(int idVehicle, VehicleStatus newStatus) {
+
+        String query = """
+                UPDATE vehicle
+                SET status = ?
+                WHERE id = ?;
+                """;
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+
+            ps.setString(1, newStatus.name());
+            ps.setInt(2, idVehicle);
+
+            int correct = ps.executeUpdate();
+
+            return correct > 0;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("An error Ocurred: " + e.getMessage());
+        }
+    }
 }

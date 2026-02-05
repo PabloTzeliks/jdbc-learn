@@ -1,8 +1,8 @@
 package pablo.tzeliks.infra;
 
 import pablo.tzeliks.domain.Vehicle;
+import pablo.tzeliks.domain.VehicleStatus;
 
-import java.sql.SQLException;
 import java.util.List;
 
 public interface VehicleRepository {
@@ -20,4 +20,5 @@ public interface VehicleRepository {
     // Additional
 
     boolean isValidPlate(String licensePlate);
+    boolean updateStatus(int id, VehicleStatus newStatus);
 }
