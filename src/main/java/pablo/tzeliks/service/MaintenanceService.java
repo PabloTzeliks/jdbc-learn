@@ -1,7 +1,6 @@
 package pablo.tzeliks.service;
 
 import pablo.tzeliks.domain.Maintenance;
-import pablo.tzeliks.domain.Vehicle;
 import pablo.tzeliks.domain.VehicleStatus;
 import pablo.tzeliks.infra.MaintenanceRepository;
 import pablo.tzeliks.infra.VehicleRepository;

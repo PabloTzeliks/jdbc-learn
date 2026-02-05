@@ -20,6 +20,8 @@ public interface VehicleRepository {
     // Additional
 
     boolean isValidPlate(String licensePlate);
+
     boolean updateStatus(int id, VehicleStatus newStatus);
+
     Vehicle findAllMaintenances(int id);
 }

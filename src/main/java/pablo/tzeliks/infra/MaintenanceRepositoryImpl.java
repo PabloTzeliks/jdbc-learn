@@ -1,7 +1,6 @@
 package pablo.tzeliks.infra;
 
 import pablo.tzeliks.domain.Maintenance;
-import pablo.tzeliks.domain.Vehicle;
 import pablo.tzeliks.utils.DatabaseConnection;
 
 import java.math.BigDecimal;
@@ -64,8 +63,6 @@ public class MaintenanceRepositoryImpl implements MaintenanceRepository {
                 return null;
             }
         } catch (SQLException e) {
-            e.printStackTrace();
-
             throw new RuntimeException("An error Ocurred: " + e.getMessage());
         }
     }
