@@ -1,5 +1,7 @@
 package pablo.tzeliks.domain;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDate;
 
 public class Vehicle {
@@ -8,7 +10,6 @@ public class Vehicle {
     private String licensePlate;
     private String model;
     private LocalDate manufacturingDate;
-    private Double mileage;
     private VehicleStatus status;
 
     public Vehicle(int id, String licensePlate, String model, LocalDate manufacturingDate, VehicleStatus status) {
@@ -57,6 +58,17 @@ public class Vehicle {
 
     public void setStatus(VehicleStatus status) {
         this.status = status;
+    }
+
+    // Additional
+    public static Vehicle mapRow(ResultSet rs) throws SQLException {
+        return new Vehicle(
+                rs.getInt(1),
+                rs.getString(2),
+                rs.getString(3),
+                rs.getDate(4).toLocalDate(),
+                VehicleStatus.valueOf(rs.getString(5))
+        );
     }
 
     @Override
